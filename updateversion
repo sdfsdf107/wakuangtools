@@ -1,0 +1,2 @@
+	echo please use password : 123
+	cd /home/miner;git reset --hard;git pull

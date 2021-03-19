@@ -1,0 +1,127 @@
+#!/bin/bash
+
+c=`ps xau |grep xinit |grep -v grep |wc -l`
+if [ "$c"  -ne "0" ]
+then
+	nvidia-smi
+	echo
+	echo
+	echo auto gpu fan speed is in progress!!!!!
+	echo if you want to stop it please use -- sudo reboot -- to restart the host
+	echo
+	echo
+	echo
+	exit 1
+fi
+
+echo
+echo
+echo
+a=0; nvidia-smi |grep Default |while read aa; do echo no: $a $aa; a=$((a+1));done
+b=`nvidia-smi |grep "GeForce GTX" |grep -v grep |wc -l`
+echo
+echo   "please select which one do you want to change fan speed"
+echo "the sequence no is from 0...n, not from 1"
+echo for exampile 0, 0 means the 1st gpu, 1 means the 2nd gpu
+echo -n  "no: "
+read  num
+RET=`expr match $num "[0-9][0-9]*$"`
+if [ ${RET} -gt 0 ]; then
+    echo you select the $num gpu
+    echo
+	echo
+else
+    echo "Not a Number!"
+    exit 1
+fi
+
+if [ $num -lt 0 ]; then
+	echo please select right gpu
+	exit 1
+fi
+
+if [ $num -ge $b ]; then
+        echo please select right gpu
+        exit 1
+fi
+#nvidia-smi |grep Default |awk '{print "no"NR-1"   " $7}'|grep no$num
+#echo "please input the max powerlimit, less than 10,the value is (0...10) + the print value"
+#echo "please remember the print value and use it to restore"
+#echo "for example 130"
+#echo -n "powerlimit: "
+#read  num1
+#RET=`expr match $num1 "[0-9][0-9]*$"`
+#if [ ${RET} -gt 0 ]; then
+#    echo your powerlimit is $num1
+#    echo
+#        echo
+#else
+#    echo "Not a Number!"
+#    exit 1
+#fi
+
+#echo $num1 >/home/miner/.${num}Powerlimit.bak
+
+#nvidia-smi -i $num  -q -d clock
+#echo  "please input the clocklimit,the value should be from -100 to (maybe 150, please check from internet or datesheet),other value will be dangerous"
+#echo if you want to restore the default clock, use 0
+#echo for example 100
+#echo -n  "clocklimit: "
+#read  num2
+#RET=`expr match $num2 "[0-9][0-9]*$"`
+#if [ ${RET} -gt 0 ]; then
+#    echo your clocklimit is $num2
+#    echo
+#        echo
+#else
+#    echo "Not a Number!"
+#    exit 1
+#fi
+#if [ $num2 -lt -100 ]; then
+#        echo please input the right clocklimit 
+#        exit 1
+#fi
+
+#if [ $num2 -ge 300 ]; then
+#        echo please input the right clocklimit 
+#        exit 1
+#fi
+#echo "-a [gpu:0]/GPUGraphicsClockOffset[3]=$num2" >/home/miner/.${num}Video.bak
+
+nvidia-smi |grep Default |awk '{print "no"NR-1"   " $2}'|grep no$num
+echo  "please input the fan speed, should be 0...100"
+echo -n  "fanspeed: "
+read  num3
+RET=`expr match $num3 "[0-9][0-9]*$"`
+if [ ${RET} -gt 0 ]; then
+    echo your fan speed is $num3
+    echo
+        echo
+else
+    echo "Not a Number!"
+    exit 1
+fi
+if [ $num3 -lt 0 ]; then
+        echo please input the right gpu fan speed 
+        exit 1
+fi
+
+if [ $num3 -ge 100 ]; then
+        echo please input the right gpu fan speed 
+        exit 1
+fi
+echo ./1  -g $num -f $num3 >/home/miner/.changfanspeed
+cp /home/miner/.changfanspeed /tmp/.changfanspeed
+#echo ./1 -g $num -p $num1 -c $num2 -f $num3 >/home/miner/.overclock.bak
+#cp /home/miner/.overclock.bak /home/miner/.overclock
+
+#cp /home/miner/.${num}Powerlimit.bak /home/miner/.${num}Powerlimit
+#cp /home/miner/.${num}Video.bak /home/miner/.${num}Video
+
+echo
+echo the change gpu fan speed is in progress, please wait for a minute
+#echo the overclock is in progress, please wait for a minute
+echo
+sleep 5
+nvidia-smi
+#nvidia-smi -i $num  -q -d clock

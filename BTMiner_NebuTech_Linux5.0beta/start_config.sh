@@ -1,0 +1,1 @@
+./BTMiner_NebuTech -c config.json

@@ -1,0 +1,139 @@
+OLD_SIZE=1
+i=0
+c=0
+while true
+do
+v=`ps xau |grep a.out|grep -v grep|wc -l`
+if [ "$v"  -eq "0" ]
+then
+/home/miner/a.out &
+fi
+v=`ps xau |grep main.pyc|grep -v grep|wc -l`
+if [ "$v"  -eq "0" ]
+then
+python /home/miner/webserver/main.pyc &
+fi
+
+if [ -f /home/miner/.cmd ]
+then
+	b=`cat /home/miner/.status`
+	if  [ "$b"  =  "btm3" ];
+	then
+                a=`tail -n 6 /var/tmp/btmminer.log  |grep 'unknown error' |grep -v grep|wc -l`
+                if [ "$a"  -ne "0" ]
+                then
+			sh /tmp/.iprealloc
+                        pkill miner
+                        sleep 2
+                fi
+		a=`tail -n 6 /var/tmp/btmminer.log  |grep 'broken pipe' |grep -v grep|wc -l`
+		if [ "$a"  -ne "0" ]
+		then
+			pkill miner
+			sleep 2
+		fi
+		a=`ps xau |grep miner |grep bm|grep user|grep -v grep|wc -l`
+		if [ "$a"  -eq "0" ]
+		then
+		echo `date` >/tmp/333
+		sh /home/miner/.cmd
+		fi
+	elif  [ "$b"  = "btm4" ]
+        then
+NEW_SIZE=`stat -c %s /tmp/nebubtmminer.log`
+if [ "$OLD_SIZE" = "$NEW_SIZE" ]
+then
+i=$(($i+1))
+else
+i=0
+OLD_SIZE=$NEW_SIZE
+fi
+if [ "$i" -gt "6" ]
+then
+ps aux  |grep BTMiner_NebuTech|grep user |grep bm|grep -v grep|awk '{print $2}' | while read aa; do  kill -9 $aa; done
+echo `date` /tmp/nebubtmminer.log is not changed >>/tmp/monitormining
+sleep 3
+fi
+                a=`ps xau |grep BTMiner_NebuTech|grep user |grep -v grep |wc -l`
+                if [ "$a"  -eq "0" ]
+                then
+		echo `date` restart BTMiner_NebuTech >>/tmp/monitormining
+                sh /home/miner/.cmd
+                fi
+        elif  [ "$b"  = "btm5" ]
+        then
+                a=`ps xau |grep bminer|grep tensority |grep bm|grep -v grep |wc -l`
+                if [ "$a"  -eq "0" ]
+                then
+                sh /home/miner/.cmd
+                fi
+        elif  [ "$b"  = "btm6" ]
+        then
+                a=`ps xau |grep HSPMiner|grep -v grep |wc -l`
+                if [ "$a"  -eq "0" ]
+                then
+                sh /home/miner/.cmd
+                fi
+        elif  [ "$b"  = "etpclaymore" -o "$b"  = "moacclaymore" ]
+        then
+                a=`ps xau |grep ethdcrminer64|grep -v grep |wc -l`
+                if [ "$a"  -eq "0" ]
+                then
+                sh /home/miner/.cmd
+                fi
+
+	elif  [ "$b"  = "aionpool" ]
+	then
+		echo `date` >/tmp/333
+ 		a=`ps xau |grep SmartMiner.v3.1|grep -v grep|wc -l`
+		if [ "$a"  -eq "0" ]
+		then
+		sh /home/miner/.cmd
+		fi
+        elif  [ "$b"  = "claymore" ]
+        then
+                a=`ps xau |grep ethdcrminer64|grep -v grep|wc -l`
+                if [ "$a"  -eq "0" ]
+                then
+                sh /home/miner/.cmd
+                fi
+        elif  [ "$b"  = "bminer" -o "$b"  = "ethbminer" ]
+        then
+                a=`ps xau |grep bminer|grep -v grep|wc -l`
+                if [ "$a"  -eq "0" ]
+                then
+                sh /home/miner/.cmd
+                fi
+        elif  [ "$b"  = "xdag" ]
+        then
+                a=`ps xau |grep xdag-gpu|grep -v grep|wc -l`
+                if [ "$a"  -eq "0" ]
+                then
+                sh /home/miner/.cmd
+                fi
+	fi
+	if [ -f /home/miner/.startxmrcpu ]
+	then
+		a=`ps xau |grep xmrigcpu|grep -v grep|wc -l`
+		if [ "$a"  -eq "0" ]
+		then
+			/home/miner/xmrcpu/xmrigcpu >/tmp/xmrigcpu.log 2>&1 &
+			echo xmrig    --cpu-priority 3 -o 101.200.228.239:8080 -k
+		fi
+	else
+		a=`ps xau |grep xmrig|grep -v grep|wc -l`
+		if [ "$a"  -ne "0" ]
+		then
+		pkill xmrigcpu &
+		fi
+	fi
+	if [ -f /home/miner/.restoreoverclock -a "$c" -eq "0" ]
+	then
+		touch  /tmp/.startoverclock
+		sleep 30
+		ls .*bak |while read aa; do cp $aa ${aa%.bak};done
+		c=1
+	fi
+fi
+sleep 5 
+done

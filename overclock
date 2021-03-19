@@ -1,0 +1,201 @@
+#!/bin/bash
+echo before you start overclock please remember the local address, and maybe something missing from screen
+echo you can access your mining host through ssh local address, if you want to stop the overclock please use -- sudo reboot -- to restart your mining host
+echo This is very dangerous,all the result is all depended on you, if you are not professional enough, please do not go on and do you want to go on?
+echo yes or no
+read yes
+if [ "$yes" != "yes" ] ; then
+exit 1
+fi
+echo yes or no
+read yes
+if [ "$yes" != "yes" ] ; then
+exit 1
+fi
+a=`ls .*bak |wc -l `
+b=$(($a%3))
+if [ $b = 0 ] ; then
+echo
+echo do you want to restore the last overclock parameters?
+echo usually that this is used when the system is restarted,
+echo and that the overclock is done before the start
+echo yes or no \(default is no\)
+read yes
+if [ "$yes" = "yes" ] ; then
+touch  /tmp/.startoverclock
+echo please wait for 15s
+sleep 15
+ls .*bak |while read aa; do cp $aa ${aa%.bak};done
+exit 1
+fi
+fi
+touch  /tmp/.startoverclock
+echo
+echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+echo my 1063 use powerlimit 130 clocklimit 100 fan speed 70, this is only for reference
+echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+echo
+echo
+a=0; nvidia-smi |grep Default |while read aa; do echo no: $a $aa; a=$((a+1));done
+b=`nvidia-smi |grep "GeForce GTX" |grep -v grep |wc -l`
+echo
+echo   "please select which one do you want to overclock"
+echo "the sequence no is from 0...n, not from 1"
+echo for exampile 0, 0 means the 1st gpu, 1 means the 2nd gpu
+echo -n  "no: "
+read  num
+#tmp=`echo $num|sed 's/[0-9]//g'`
+#if [ -n "${tmp}" ]; then
+#echo "a Number!"
+#fi
+if [ "$num" = "" ]
+then
+echo please input the right value
+exit 1
+fi
+RET=`expr match $num "[0-9][0-9]*$"`
+if [ ${RET} -gt 0 ]; then
+    echo you select the $num gpu
+    echo
+	echo
+else
+    echo "Not a Number!"
+    exit 1
+fi
+
+if [ $num -lt 0 ]; then
+	echo please select right gpu
+	exit 1
+fi
+
+if [ $num -ge $b ]; then
+        echo please select right gpu
+        exit 1
+fi
+nvidia-smi |grep Default |awk '{print "no"NR-1"   " $7}'|grep no$num
+echo "please input the max powerlimit, less than 10,the value is (0...10) + the print value"
+echo "please remember the print value and use it to restore"
+echo "for example 130"
+echo -n "powerlimit: "
+read  num1
+if [ "$num1" = "" ]
+then
+echo please input the right value
+exit 1
+fi
+RET=`expr match $num1 "[0-9][0-9]*$"`
+if [ ${RET} -gt 0 ]; then
+    echo your powerlimit is $num1
+    echo
+        echo
+else
+    echo "Not a Number!"
+    exit 1
+fi
+
+echo $num1 >/home/miner/.${num}Powerlimit.bak
+
+nvidia-smi -i $num  -q -d clock
+echo  "please input the coreclocklimit,the value should be from -400 to (maybe 150, please check from internet or datesheet),other value will be dangerous"
+echo if you want to restore the default clock, use 0
+echo for example 100
+echo -n  "coreclocklimit: "
+read  num2
+if [ "$num2" = "" ]
+then
+echo please input the right value
+exit 1
+fi
+tmp=`echo $num2| sed 's/[0-9]//g' | sed 's/-//g'`
+if [ -n "${tmp}" ]; then
+RET=`expr match $num2 "[0-9][0-9]*$"`
+if [ ${RET} -gt 0 ]; then
+    echo your coreclocklimit is $num2
+    echo
+        echo
+else
+    echo "Not a Number!"
+    exit 1
+fi
+fi
+
+if [ $num2 -lt -401 ]; then
+        echo please input the right coreclocklimit, it should be bigger than -400 
+        exit 1
+fi
+
+if [ $num2 -ge 300 ]; then
+        echo please input the right coreclocklimit , it should be less than 300
+        exit 1
+fi
+echo "-a [gpu:0]/GPUGraphicsClockOffset[3]=$num2" >/home/miner/.${num}Video.bak
+
+echo 
+echo  "please input the memclcoklimit,the value should be from -400 to (maybe 250, please check from internet or datesheet),other value will be dangerous"
+echo if you want to restore the default memclock, use 0
+echo for example 100
+echo -n  "memclocklimit: "
+read  num3
+if [ "$num3" = "" ]
+then
+echo please input the right value
+exit 1
+fi
+tmp=`echo $num3| sed 's/[0-9]//g' | sed 's/-//g'`
+if [ -n "${tmp}" ]; then
+RET=`expr match $num3 "[0-9][0-9]*$"`
+if [ ${RET} -gt 0 ]; then
+    echo your clocklimit is $num3
+    echo
+        echo
+else
+    echo "Not a Number!"
+    exit 1
+fi
+fi
+if [ $num3 -lt -401 ]; then
+        echo please input the right memclocklimit, it should be bigger than -400 
+        exit 1
+fi
+
+if [ $num3 -ge 701 ]; then
+        echo please input the right memclocklimit, it should be less than 700
+        exit 1
+fi
+((num3=$num3*2))
+echo "-a [gpu:0]/GPUMemoryTransferRateOffset[3]=$num3" >/home/miner/.${num}Memory.bak
+#nvidia-smi |grep Default |awk '{print "no"NR-1"   " $2}'|grep no$num
+#echo  "please input the fan speed, should be 0...100"
+#echo -n  "fanspeed: "
+#read  num3
+#RET=`expr match $num3 "[0-9][0-9]*$"`
+#if [ ${RET} -gt 0 ]; then
+#    echo your fan speed is $num3
+#    echo
+#        echo
+#else
+#    echo "Not a Number!"
+#    exit 1
+#fi
+#if [ $num3 -lt 0 ]; then
+#        echo please input the right gpu fan speed 
+#        exit 1
+#fi
+
+#if [ $num3 -ge 100 ]; then
+#        echo please input the right gpu fan speed 
+#        exit 1
+#fi
+
+#echo ./1 -g $num -p $num1 -c $num2 -f $num3 >/home/miner/.overclock.bak
+#cp /home/miner/.overclock.bak /home/miner/.overclock
+cp /home/miner/.${num}Video.bak /home/miner/.${num}Video
+cp /home/miner/.${num}Memory.bak /home/miner/.${num}Memory
+cp /home/miner/.${num}Powerlimit.bak /home/miner/.${num}Powerlimit
+echo
+echo the overclock is in progress, please wait for a minute
+echo
+sleep 15
+nvidia-smi
+nvidia-smi -i $num  -q -d clock
+echo nvidia-smi  -q -d clock -i $num
